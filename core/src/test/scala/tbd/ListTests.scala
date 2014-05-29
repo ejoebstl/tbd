@@ -413,6 +413,15 @@ class ListTests extends FlatSpec with Matchers {
     output.read()._1.toBuffer().sortWith(_ < _) should be (Buffer(0, 2, 4, 8))
     output.read()._2.toBuffer().sortWith(_ < _) should be (Buffer(1))
 
+
+    mutator.remove("four")
+    mutator.remove("three")
+    mutator.propagate()
+
+    output.read()._1.toBuffer().sortWith(_ < _) should be (Buffer(0, 4, 8))
+    output.read()._2.toBuffer().sortWith(_ < _) should be (Buffer())
+
+
     mutator.shutdown()
   }
 
