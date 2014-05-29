@@ -183,7 +183,7 @@ class ChunkList[T, U](
       pred: (TBD, (T, U)) => Boolean,
       parallel: Boolean = false,
       memoized: Boolean = false):
-       Mod[(AdjustableList[T, U], AdjustableList[T, U])] = ???
+       (AdjustableList[T, U], AdjustableList[T, U]) = ???
 
   def sort(
       tbd: TBD,

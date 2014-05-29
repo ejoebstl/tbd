@@ -133,7 +133,7 @@ class PartitionedDoubleModList[T, V](
       pred: (TBD, (T, V)) => Boolean,
       parallel: Boolean = false,
       memoized: Boolean = false):
-       Mod[(AdjustableList[T, V], AdjustableList[T, V])] = ???
+       (AdjustableList[T, V], AdjustableList[T, V]) = ???
 
   def sort(
       tbd: TBD,

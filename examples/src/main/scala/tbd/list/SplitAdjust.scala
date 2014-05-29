@@ -34,7 +34,7 @@ class SplitAdjust(
   var output: SplitResult = null
 
   var traditionalAnswer: (GenIterable[String], GenIterable[String]) = null
-  type SplitResult = Mod[(AdjustableList[Int, String], AdjustableList[Int, String])]
+  type SplitResult = (AdjustableList[Int, String], AdjustableList[Int, String])
 
   def run(tbd: TBD): SplitResult = {
     val pages = tbd.input.getAdjustableList[Int, String](partitions)
@@ -54,8 +54,8 @@ class SplitAdjust(
   }
 
   def checkOutput(input: GenMap[Int, String]): Boolean = {
-    val sortedOutputA = output.read()._1.toBuffer().sortWith(_ < _)
-    val sortedOutputB = output.read()._2.toBuffer().sortWith(_ < _)
+    val sortedOutputA = output._1.toBuffer.sortWith(_ < _)
+    val sortedOutputB = output._2.toBuffer.sortWith(_ < _)
 
     traditionalRun(input.values)
 

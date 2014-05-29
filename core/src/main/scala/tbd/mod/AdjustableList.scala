@@ -83,7 +83,7 @@ trait AdjustableList[T, U] {
       pred: (TBD, (T, U)) => Boolean,
       parallel: Boolean = false,
       memoized: Boolean = false):
-        Mod[(AdjustableList[T, U], AdjustableList[T, U])]
+        (AdjustableList[T, U], AdjustableList[T, U])
 
   /* Meta functions */
   def toBuffer(): Buffer[U]
