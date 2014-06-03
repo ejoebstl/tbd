@@ -22,7 +22,68 @@ import tbd.Mutator
 
 class AdjustableExperiment(aConf: Map[String, _])
     extends Experiment(aConf) {
+
   val input = new WCInput(count * 10, mutations)
+  val chunks = ArrayBuffer[String]()
+
+  val rand = new scala.util.Random()
+  val maxKey = count * 10
+  def addValue(mutator: Mutator, table: Map[Int, String]) {
+    if (chunks.size == 0) {
+      chunks ++= Experiment.loadPages()
+    }
+
+    var key = rand.nextInt(maxKey)
+    val value = rand.nextInt(Int.MaxValue)
+
+    while (table.contains(key)) {
+      key = rand.nextInt(maxKey)
+    }
+
+    println("addValue " + key + " -> " + value)
+
+    mutator.put(key, chunks.head)
+    table += (key -> chunks.head)
+    chunks -= chunks.head
+  }
+
+  def removeValue(mutator: Mutator, table: Map[Int, String]) {
+    if (table.size > 1) {
+      var key = rand.nextInt(maxKey)
+      while (!table.contains(key)) {
+        key = rand.nextInt(maxKey)
+      }
+      println("removeValue " + key)
+      mutator.remove(key)
+      table -= key
+    } else {
+      addValue(mutator, table)
+    }
+  }
+
+  def updateValue(mutator: Mutator, table: Map[Int, String]) {
+    if (chunks.size == 0) {
+      chunks ++= Experiment.loadPages()
+    }
+
+    var key = rand.nextInt(maxKey)
+    val value = rand.nextInt(Int.MaxValue)
+    while (!table.contains(key)) {
+      key = rand.nextInt(maxKey)
+    }
+      println("updateValue " + key + " -> " + value)
+    mutator.update(key, chunks.head)
+    table(key) = chunks.head
+    chunks -= chunks.head
+  }
+
+  def update(mutator: Mutator, table: Map[Int, String]) {
+    mutations(rand.nextInt(mutations.size)) match {
+      case "insert" => addValue(mutator, table)
+      case "remove" => removeValue(mutator, table)
+      case "update" => updateValue(mutator, table)
+    }
+  }
 
   def run(): Map[String, Double] = {
     val results = Map[String, Double]()
@@ -120,7 +181,12 @@ class AdjustableExperiment(aConf: Map[String, _])
         val elapsed = System.currentTimeMillis() - before2
 
 	if (Experiment.check) {
-          assert(alg.checkOutput(table))
+          if(!alg.checkOutput(table)){
+            val visualizer = new tbd.visualization.TbdVisualizer()
+            visualizer.showLabels = false
+            visualizer.showDDG(mutator.getDDG().root)
+            assert(false)
+          }
 	}
 
         results(percent) = elapsed

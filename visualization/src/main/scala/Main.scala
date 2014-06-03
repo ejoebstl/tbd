@@ -19,72 +19,121 @@ package tbd.visualization
 import scala.collection.mutable.ArrayBuffer
 import tbd.{Adjustable, Changeable, Mutator, TBD}
 import tbd.mod.{AdjustableList, Dest, Mod}
+import collection.mutable.HashMap
+import scala.util.Random
 
 object Main {
+  val mutator = new Mutator()
+
+  val table = new HashMap[Int, Int]
+  val rand = new Random()
+  var freeList = List[Int]()
+
+  var keyCounter = 0
+  val maxValue = 100
+
+  def addValue() {
+    val newValue = rand.nextInt(maxValue)
+    val newKey =
+      if(freeList.size == 0 || rand.nextInt(2) == 1) {
+        keyCounter += 1
+        keyCounter
+      } else {
+        var (head::tail) = freeList
+        freeList = tail
+        head
+      }
+
+    println("Add (" + newKey + ", " + newValue + ")")
+
+    mutator.put(newKey, newValue)
+    table += (newKey -> newValue)
+  }
+
+  def removeValue() {
+    val keys = table.keys.toBuffer
+
+    if(keys.length > 0)
+    {
+      val toRemove = keys(rand.nextInt(keys.length))
+
+      println("Remove (" + toRemove + ", " + table(toRemove) + ")")
+
+      table -= toRemove
+      mutator.remove(toRemove)
+      freeList = (freeList :+ toRemove)
+    }
+  }
+
+  def updateValue() {
+    val keys = table.keys.toBuffer
+
+    if(keys.length > 0)
+    {
+      val toUpdate = keys(rand.nextInt(keys.length))
+      val newValue = rand.nextInt(maxValue)
+
+      println("Update (" + toUpdate + ", " + table(toUpdate) +
+              ") => (" + toUpdate + ", " + newValue + ") ")
+
+      table(toUpdate) = newValue
+      mutator.update(toUpdate, newValue)
+    }
+  }
+
+  def randomMutation() {
+    rand.nextInt(3) match {
+      case 0 => updateValue()
+      case 1 => removeValue()
+      case 2 => addValue()
+    }
+  }
+
+  val initialSize = 1000
+  val maximalMutationsPerPropagation = 50
+
   def main(args: Array[String]) {
 
-    val visualizer = new TbdVisualizer()
-    visualizer.showLabels = true
+    var mutationCounter = 1
 
-    val mutator = new Mutator()
+    for(i <- 0 to initialSize)
+      addValue()
 
-    for(i <- 1 to 10)
-      mutator.put(i.toString(), i)
-
-    val output = mutator.run[Mod[(String, Int)]](new ListReduceSumTest())
+    val output = mutator.run[(AdjustableList[String, Int],
+                              AdjustableList[String, Int])](new ListSplitTest())
     mutator.propagate()
 
-    println(output.read())
-    visualizer.showDDG(mutator.getDDG().root)
-    readLine()
+    while(true) {
 
-    mutator.update("0", 99)
-    mutator.update("1", 2)
-    mutator.propagate()
+      println("## Mutation Cycle " + mutationCounter)
 
-    println(output.read())
-    visualizer.showDDG(mutator.getDDG().root)
-    readLine()
+      for(i <- 0 to rand.nextInt(maximalMutationsPerPropagation)) {
+        randomMutation()
+        mutator.propagate()
+      }
 
-    mutator.update("7", 4)
-    mutator.update("8", -1)
-    mutator.propagate()
+      mutationCounter += 1
 
-    println(output.read())
-    visualizer.showDDG(mutator.getDDG().root)
-    readLine()
+      val ca = table.values.filter(x => x % 2 == 0).toBuffer.sortWith(_ < _)
+      val cb = table.values.filter(x => x % 2 != 0).toBuffer.sortWith(_ < _)
 
-    mutator.remove("1")
-    mutator.remove("3")
-    mutator.propagate()
+      val a = output._1.toBuffer.sortWith(_ < _)
+      val b = output._2.toBuffer.sortWith(_ < _)
 
-    println(output.read())
-    visualizer.showDDG(mutator.getDDG().root)
-    readLine()
+      if(!(ca == a && cb == b)) {
+        println("Check error.")
+        println("ca: " + ca)
+        println("a: " + a)
+        println("cb: " + cb)
+        println("b: " + b)
 
-    mutator.remove("2")
-    mutator.remove("7")
-    mutator.propagate()
-
-    println(output.read())
-    visualizer.showDDG(mutator.getDDG().root)
-    readLine()
-
-    mutator.put("1", 33)
-    mutator.put("7", 22)
-    mutator.propagate()
-
-    println(output.read())
-    visualizer.showDDG(mutator.getDDG().root)
-    readLine()
-
-    mutator.put("11", 55)
-    mutator.put("12", 66)
-    mutator.propagate()
-
-    println(output.read())
-    visualizer.showDDG(mutator.getDDG().root)
-    readLine()
+        val visualizer = new TbdVisualizer()
+        visualizer.showDDG(mutator.getDDG().root)
+        readLine()
+      }
+      //Thread.sleep(1000)
+      //readLine()
+    }
 
     mutator.shutdown()
   }
@@ -98,5 +147,24 @@ class ListReduceSumTest extends Adjustable {
       (tbd: TBD, pair1: (String, Int), pair2: (String, Int)) => {
         (pair2._1, pair1._2 + pair2._2)
       })
+  }
+}
+
+
+class ListSplitTest extends Adjustable {
+  def run(tbd: TBD):
+        (AdjustableList[String, Int], AdjustableList[String, Int]) = {
+    val list = tbd.input.getAdjustableList[String, Int](partitions = 1)
+    list.split(tbd, (tbd, v) => (v._2 % 2 == 0), true, true)
+  }
+}
+
+class ListSortTest extends Adjustable {
+  def run(tbd: TBD):
+        AdjustableList[String, Int] = {
+    val list = tbd.input.getAdjustableList[String, Int](partitions = 1)
+    list.sort(tbd, (tbd, a, b) => {
+      a._2 < b._2
+    })
   }
 }

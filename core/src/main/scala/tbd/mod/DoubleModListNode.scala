@@ -85,27 +85,27 @@ class DoubleModListNode[T, V] (
     val (matchNext, diffNext) = lift.memo(List(next), () => {
       tbd.mod2((newDestMatch: Dest[DoubleModListNode[T, V]], newDestNoMatch: Dest[DoubleModListNode[T, V]]) => {
         tbd.read(next)(next => {
-           if(next != null) {
-             next.split(tbd, newDestMatch, newDestNoMatch, lift, pred)
-           } else {
-             tbd.write(newDestMatch, null)
-             tbd.write(newDestNoMatch, null)
-           }
-         })
-       })
-     })
+          if(next != null) {
+            next.split(tbd, newDestMatch, newDestNoMatch, lift, pred)
+          } else {
+            tbd.write(newDestMatch, null)
+            tbd.write(newDestNoMatch, null)
+          }
+        })
+      })
+    })
 
-    tbd.read(value)((v) => {
+    tbd.read(value)((v) => { 
       if(pred(tbd, (v._1, v._2))) {
-          tbd.write(destMatch, new DoubleModListNode(tbd.createMod(v), matchNext))
-          tbd.read(diffNext)(diffNext => {
-            tbd.write(destNoMatch, diffNext)
-          })
+        tbd.write(destMatch, new DoubleModListNode(tbd.createMod(v), matchNext))
+        tbd.read(diffNext)(diffNext => {
+          tbd.write(destNoMatch, diffNext)
+        })
       } else {
-          tbd.write(destNoMatch, new DoubleModListNode(tbd.createMod(v), diffNext))
-          tbd.read(matchNext)(matchNext => {
-            tbd.write(destMatch, matchNext)
-          })
+        tbd.write(destNoMatch, new DoubleModListNode(tbd.createMod(v), diffNext))
+        tbd.read(matchNext)(matchNext => {
+          tbd.write(destMatch, matchNext)
+        })
       }
     })
   }
