@@ -430,7 +430,7 @@ class ListTests extends FlatSpec with Matchers {
 
     var data = new ArrayBuffer[Int]()
 
-    for(i <- 0 to 1000) {
+    for(i <- 0 to 500) {
       val r = rand.nextInt(1000)
       mutator.put(i.toString, r)
       data += r
