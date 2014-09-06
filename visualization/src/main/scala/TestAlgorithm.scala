@@ -26,24 +26,38 @@ import tbd.TBD._
 /*
  * Trait for test algorithms to run with the visualizer.
  */
-trait TestAlgorithm[TbdOutputType, NativeOutputType]
+trait TestAlgorithm[InputType <: Input[Int, Int], TbdOutputType, NativeOutputType]
     extends Adjustable[TbdOutputType] {
   //Reads the output and returns the result
   def getResult(output: TbdOutputType): NativeOutputType
   //Processes the input in a conventional way to generate verification output.
   def getExpectedResult(input: Map[Int, Int]): NativeOutputType
+
+  //Returns the input for this algorithm.
+  protected def createInput(): InputType
+
+  def getInput(): InputType = {
+    input
+  }
+
+  protected var input: InputType = createInput()
+}
+
+abstract class ListAlgorithm[TbdOutputType, NativeOutputType]
+    extends TestAlgorithm[ListInput[Int, Int], TbdOutputType, NativeOutputType] {
   //Returns the list conf for the algorithm, so we can enforce a
   //certain type of list.
-  def getListConf() = { new ListConf(partitions = 1) }
+  def getListConf(): ListConf = { new ListConf(partitions = 1) }
 
-  var input: ListInput[Int, Int] = null
+  //Returns a list input according to the given settings.
+  protected def createInput(): ListInput[Int, Int] = { ListInput[Int, Int](getListConf()) }
 }
 
 /*
  * A reduce algorithm test.
  */
 class ListReduceSumTest()
-    extends TestAlgorithm[Mod[(Int, Int)], Int] {
+    extends ListAlgorithm[Mod[(Int, Int)], Int] {
 
   def run(implicit c: Context): Mod[(Int, Int)] = {
     val modList = input.getAdjustableList()
@@ -66,7 +80,7 @@ class ListReduceSumTest()
  * A sort algorithm test.
  */
 class ListSortTest()
-    extends TestAlgorithm[AdjustableList[Int, Int], Seq[Int]] {
+    extends ListAlgorithm[AdjustableList[Int, Int], Seq[Int]] {
   def run(implicit c: Context): AdjustableList[Int, Int] = {
     val modList = input.getAdjustableList()
     modList.sort((a, b) => a._2 < b._2)
@@ -85,7 +99,7 @@ class ListSortTest()
  * A split algorithm test.
  */
 class ListSplitTest()
-    extends TestAlgorithm[
+    extends ListAlgorithm[
       (AdjustableList[Int, Int], AdjustableList[Int, Int]),
       (Seq[Int], Seq[Int])] {
   def run(implicit c: Context):
@@ -106,7 +120,7 @@ class ListSplitTest()
 }
 
 class ListMapTest()
-    extends TestAlgorithm[AdjustableList[Int, Int], Seq[Int]] {
+    extends ListAlgorithm[AdjustableList[Int, Int], Seq[Int]] {
   def run(implicit c: Context): AdjustableList[Int, Int] = {
     val modList = input.getAdjustableList()
     modList.map((a) => (a._1, a._2 * 2))
@@ -122,10 +136,10 @@ class ListMapTest()
 }
 
 /*
- * A test which creats a tiny DDG to check dependencies. 
+ * A test which creats a tiny DDG to check dependencies.
  */
 class ModDepTest()
-    extends TestAlgorithm[Mod[Int], Int] {
+    extends ListAlgorithm[Mod[Int], Int] {
   def run(implicit c: Context): Mod[Int] = {
     val modList = input.getAdjustableList().asInstanceOf[tbd.list.ModList[Int, Int]]
 

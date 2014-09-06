@@ -119,7 +119,9 @@ class DdgVisualizer extends GridBagPanel with Publisher {
         if(x == null) {
           "None"
         } else {
-          (x.runId + " - " + x.input)
+          ("Run: " + x.runId + ": " + x.input.map(x => {
+            x._1 + " " + new String(Character.toChars(8594)) + " " + x._2
+          }).mkString(", "))
         }
       )
     }

@@ -27,7 +27,8 @@ import tbd._
  * Test generator which performs continous updates of all possible lengths
  * on all possible positions.
  */
-class TargetedExhaustiveTest[T, V](algorithm: TestAlgorithm[T, V]) extends TestBase(algorithm) {
+class TargetedExhaustiveTest[I <: Input[Int, Int], T, V](algorithm: TestAlgorithm[I, T, V])
+  extends TestBase(algorithm) {
 
   def initialize() = { }
 

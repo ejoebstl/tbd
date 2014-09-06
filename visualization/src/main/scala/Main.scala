@@ -16,9 +16,19 @@
 
 package tbd.visualization
 
+import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.pattern.ask
+import akka.util.Timeout
+import com.typesafe.config.ConfigFactory
+import scala.concurrent.Await
+import scala.concurrent.duration._
+import scala.language.existentials
+
 import tbd.visualization.analysis._
 import org.rogach.scallop._
-import scala.language.existentials
+import tbd.Input
+import tbd.visualization.eval._
+import tbd.datastore.Datastore
 
 
 object Main {
@@ -27,6 +37,13 @@ object Main {
 
     //Set debug flag to true so we can have nice tags.
     tbd.master.Main.debug = true
+
+    val system = ActorSystem("masterSystem0",
+                           ConfigFactory.load.getConfig("master"))
+
+    val datastoreRef = system.actorOf(Datastore.props("memory", 10000),
+                                      "datastore")
+    Datastore.datastoreRef = datastoreRef
 
     object Conf extends ScallopConf(args) {
       version("TBD Visualizer 0.1 (c) 2014 Carnegie Mellon University")
@@ -51,7 +68,7 @@ object Main {
     }
 
     //Creates the ExperimentSource for the selected test.
-    def createTestEnvironment[T, V](algo: TestAlgorithm[T, V]) = {
+    def createTestEnvironment[I <: Input[Int, Int], T, V](algo: TestAlgorithm[I, T, V]) = {
       Conf.testmode.get.get match {
         case "manual" => new ManualTest(algo) {
           initialSize = Conf.initialCount.get.get
@@ -86,7 +103,7 @@ object Main {
       }
     }
 
-    def create[T, V](algo: TestAlgorithm[T, V]) = {
+    def create[I <: Input[Int, Int], T, V](algo: TestAlgorithm[I, T, V]) = {
       val test = createTestEnvironment(algo)
       val output = createOutput[V]()
       new Main(test, List(output))
@@ -98,6 +115,8 @@ object Main {
       case "sort" => create(new ListSortTest())
       case "split" => create(new ListSplitTest())
       case "map" => create(new ListMapTest())
+      case "snmap" => create(new NaiveSimpleListMap())
+      case "smmap" => create(new MemoSimpleListMap())
       case "modDependency" => create(new ModDepTest())
     }
 
@@ -109,7 +128,7 @@ object Main {
  * Runs a given test, tracks all dependencies, and then sends the result
  * to the given ExperimentSink.
  */
-class Main[T, V](val test: TestBase[T, V],
+class Main[I <: Input[Int, Int], T, V](val test: TestBase[I, T, V],
                  val outputs: List[ExperimentSink[V]])
     extends ExperimentSink[V] {
   test.setExperimentListener(this)

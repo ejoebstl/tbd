@@ -53,7 +53,7 @@ class FreeVarDependencyTracker extends DependencyTracker {
 
     //Finds adjacent paths with the same dependencies, and makes them
     //point to the node where the bound variable is introduced instead of some
-    //intermediate node. This is comparable to path compression. 
+    //intermediate node. This is comparable to path compression.
     //
     //For example, the set of dependencies (A -> B) (B -> C) becomes
     //(A -> C) (B -> C).
@@ -64,7 +64,7 @@ class FreeVarDependencyTracker extends DependencyTracker {
     iter.foreach(node => {
       val parent = ddg.getCallParent(node)
 
-      if(parent != null && invDeps.contains(node)) {
+      if(parent != null && invDeps.contains(parent) && invDeps.contains(node)) {
         val depsToMe = invDeps(node)
         val depsToParent = invDeps(parent)
 

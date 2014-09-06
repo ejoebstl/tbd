@@ -27,8 +27,8 @@ import tbd._
 /*
  * Test generator which uses user interaction to mutate the input.
  */
-class ManualTest[T, V](algorithm: TestAlgorithm[T, V])
-    extends TestBase(algorithm) {
+class ManualTest[I <: Input[Int, Int], T, V](algorithm: TestAlgorithm[I, T, V])
+    extends TestBase[I, T, V](algorithm) {
 
   private val putm = "(a) (\\d+) (\\d+)".r
   private val updatem = "(u) (\\d+) (\\d+)".r

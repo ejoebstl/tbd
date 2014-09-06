@@ -26,14 +26,13 @@ import tbd.list.ListInput
 /*
  * Base class for test generators.
  */
-abstract class TestBase[T, V](algorithm: TestAlgorithm[T, V])
+abstract class TestBase[I <: Input[Int, Int], T, V](algorithm: TestAlgorithm[I, T, V])
     extends ExperimentSource[V] {
   //Size of input for initial run.
   var initialSize = 10
 
   private val mutator = new Mutator()
-  private val listConf = algorithm.getListConf()
-  private val input = ListInput[Int, Int](listConf)
+  private val input: I = algorithm.getInput()
 
   //Counter keeping track of mutation rounds.
   protected var mutationCounter = 0
@@ -77,8 +76,8 @@ abstract class TestBase[T, V](algorithm: TestAlgorithm[T, V])
     if(table.contains(key)) {
       //Element exists. Skip.
     } else {
-      mutations += Deletion(key, value)
-
+      mutations += Insertion(key, value)
+      
       input.put(key, value)
       table += (key -> value)
     }
@@ -145,7 +144,6 @@ abstract class TestBase[T, V](algorithm: TestAlgorithm[T, V])
     for(i <- 1 to initialSize)
       addValue()
 
-    algorithm.input = input
     val output = mutator.run[T](algorithm)
 
     initialize()

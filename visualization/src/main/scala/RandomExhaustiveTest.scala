@@ -24,9 +24,10 @@ import scala.io.StdIn
 import tbd._
 
 /*
- * Test generator which performs random mutations on the input. 
+ * Test generator which performs random mutations on the input.
  */
-class RandomExhaustiveTest[T, V](algorithm: TestAlgorithm[T, V]) extends TestBase(algorithm) {
+class RandomExhaustiveTest[I <: Input[Int, Int], T, V](algorithm: TestAlgorithm[I, T, V])
+  extends TestBase[I, T, V](algorithm) {
 
   var maxMutations = 2
   var minMutations = 0
