@@ -31,6 +31,10 @@ abstract class TestBase[I <: Input[Int, Int], T, V](algorithm: TestAlgorithm[I, 
   //Size of input for initial run.
   var initialSize = 10
 
+
+  //A bool indicating whether resutls shall be checked or not.
+  var checkResults = true
+
   private val mutator = new Mutator()
   private val input: I = algorithm.getInput()
 
@@ -77,7 +81,7 @@ abstract class TestBase[I <: Input[Int, Int], T, V](algorithm: TestAlgorithm[I, 
       //Element exists. Skip.
     } else {
       mutations += Insertion(key, value)
-      
+
       input.put(key, value)
       table += (key -> value)
     }
@@ -160,9 +164,13 @@ abstract class TestBase[I <: Input[Int, Int], T, V](algorithm: TestAlgorithm[I, 
       pushResult(new ExperimentResult(mutationCounter, input, mutations.toList,
                                       result, expectedResult, ddg))
 
-      if(result != expectedResult) {
-        throw new IllegalArgumentException("Check Error. Expected: " + expectedResult +
-                                    "Got: " + result)
+      if(checkResults) {
+        if(result != expectedResult) {
+          throw new IllegalArgumentException("Check Error. Expected: " + expectedResult +
+                                      "Got: " + result)
+        }
+      } else {
+        println("//Output: " + result)
       }
 
       mutations = MutableList[Mutation]()

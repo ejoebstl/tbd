@@ -65,6 +65,8 @@ object Main {
         descr = "Sets the output mode: visualizer (default), diff, latex or 2dplot.")
       val testmode = opt[String]("test", 't', default = Some("random"),
         descr = "Test case generation mode: random (default), manual or exhaustive")
+      val skipSheckResults = opt[Boolean]("skipSheckResults", 'r', default = Some(false),
+        descr = "Skips result checking.")
     }
 
     //Creates the ExperimentSource for the selected test.
@@ -72,6 +74,7 @@ object Main {
       Conf.testmode.get.get match {
         case "manual" => new ManualTest(algo) {
           initialSize = Conf.initialCount.get.get
+          checkResults = !Conf.skipSheckResults.get.get
         }
 
         case "random" => new RandomExhaustiveTest(algo) {
@@ -79,10 +82,12 @@ object Main {
           minMutations = Conf.minMutations.get.get
           count = Conf.mutationRoundCount.get.get
           initialSize = Conf.initialCount.get.get
+          checkResults = !Conf.skipSheckResults.get.get
         }
 
         case "exhaustive" => new TargetedExhaustiveTest(algo) {
           initialSize = Conf.initialCount.get.get
+          checkResults = !Conf.skipSheckResults.get.get
         }
       }
     }
@@ -115,8 +120,16 @@ object Main {
       case "sort" => create(new ListSortTest())
       case "split" => create(new ListSplitTest())
       case "map" => create(new ListMapTest())
+
       case "snmap" => create(new NaiveSimpleListMap())
+      case "snfilter" => create(new NaiveSimpleListFilter())
+      case "snsplit" => create(new NaiveSimpleListSplit())
+      case "snreverse" => create(new NaiveSimpleListReverse())
+      case "smfilter" => create(new MemoSimpleListFilter())
+      case "smsplit" => create(new MemoSimpleListSplit())
       case "smmap" => create(new MemoSimpleListMap())
+      case "smreverse" => create(new MemoSimpleListReverse())
+
       case "modDependency" => create(new ModDepTest())
     }
 

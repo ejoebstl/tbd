@@ -93,25 +93,31 @@ class DdgRenderer extends Panel with Publisher {
 
   //Sets the layout position of a node.
   private def setPos(node: Node, x: Int, y: Int) {
-    pos(node) = (x, y)
+    this.synchronized {
+      pos(node) = (x, y)
+    }
   }
 
   //Gets the layout position of a node.
   private def getPos(node: Node): (Int, Int) = {
-    if(pos.contains(node)) {
-      pos(node)
-    } else {
-      (0, 0)
+    this.synchronized {
+      if(pos.contains(node)) {
+        pos(node)
+      } else {
+        (0, 0)
+      }
     }
   }
 
   //Clears this DdgRenderer
   def clear() {
-    pos.clear()
-    ddg = null
-    comparison = null
-    selectedNode = null
-    repaint()
+    this.synchronized {
+      pos.clear()
+      ddg = null
+      comparison = null
+      selectedNode = null
+      repaint()
+    }
   }
 
   //Transforms a coordinate pair from model to drawing coords.
@@ -149,7 +155,7 @@ class DdgRenderer extends Panel with Publisher {
         g.drawLine(x1, y1, x2, y2)
       }
     }
-    
+
     //If we have a selected node...
     if(ddg != null && selectedNode != null) {
 
