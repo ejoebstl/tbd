@@ -17,6 +17,7 @@
 package tbd.visualization
 
 import graph._
+import tbd.ddg.Tag
 
 /*
  * Generates a latex representation of the control graph of a DDG, using
@@ -45,6 +46,31 @@ class LatexExport[T] extends ExperimentSink[T] {
     out.toString
   }
 
+  //Formates a node lable suitable for latex export.
+  private def getNodeLabel(node: Node): String = {
+    node.tag match {
+      case Tag.Write(writes) => writes match {
+          case List(tbd.ddg.SingleWriteTag(mod, value)) => s"(${mod}, ${value})"
+          case writes => "(" + {
+              writes.map(w => s"(${w.mod}, ${w.value})").mkString(", ")
+          } + ")"
+      }
+      case x:Tag.Read => {
+          s"(${x.mod}, ${x.readValue}, f.${x.reader.funcId})"
+      }
+      case Tag.Memo(func, sig) => {
+          val fsig = sig.mkString(", ")
+          s"(${fsig}, f.${func.funcId})"
+      }
+      case Tag.Par(f1, f2) => s"(f.${f1.funcId}, f.${f2.funcId})"
+      case Tag.Mod(mods, initializer) => {
+          val fmods = mods.mkString(", ")
+          s"(${fmods}, f.${initializer.funcId})"
+      }
+      case x:Tag.Root => ""
+    }
+  }
+
   //Recursively writes DDG nodes to the supplied StringBuilder.
   private def writeNode(
       out: StringBuilder,
@@ -52,8 +78,9 @@ class LatexExport[T] extends ExperimentSink[T] {
       ddg: DDG,
       pre: String): Unit = {
     out.append(pre)
-    out.append(s"node [${node.typeString}")
-    out.append(s", label={180:${node.shortLabel}}")
+    out.append(s"node (${node.internalId})[${node.typeString}")
+    val shortLabel = getNodeLabel(node)
+    out.append(s", label={0:${node.internalId}.${node.typeString}}, label={350:${shortLabel}}")
     out.append("]{}\n")
 
     val childs = ddg.getCallChildren(node)

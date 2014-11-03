@@ -19,6 +19,7 @@ package tbd.visualization
 import graph._
 import analysis._
 import scala.swing._
+import scala.swing.event._
 import tbd.ddg.{Tag, FunctionTag}
 
 /*
@@ -74,31 +75,46 @@ class DiffView[T]() extends MainFrame with ExperimentSink[T] {
     visualizer2.addResult(result)
   }
 
+  var adDistance = DistanceExtractors.allocationSensitive _
+  var mDistance = DistanceExtractors.memoSensitive _
+  var pDistance = DistanceExtractors.pure _
+
+  var distances = List(("Pure", pDistance),
+                       ("Memo-Sensitive", mDistance),
+                       ("Allocation-Sensitive", adDistance))
+
+  var comparison:(Node) => Any = DistanceExtractors.pure
+
+  var diffSelector = new ComboBox(distances) {
+    renderer = ListView.Renderer(_._1)
+  }
+
+  listenTo(diffSelector.selection)
+
   reactions += {
     case SelectedDDGChanged(ddg) => {
       updateDiff()
     }
+    case x:SelectionChanged => {
+      comparison = diffSelector.selection.item._2
+      updateDiff()
+    }
   }
 
-  //Calculates and updates the diff information. 
+  //Calculates and updates the diff information.
   private def updateDiff() {
     if(visualizer1.ddg != null && visualizer2.ddg != null) {
 
-      val diff = new GreedyTraceComparison((node => node.tag)).compare(visualizer1.ddg.ddg,
+      val diff = new GreedyTraceComparison(comparison).compare(visualizer1.ddg.ddg,
                     visualizer2.ddg.ddg)
-      visualizer1.setComparisonResult(diff)
+      visualizer1.setComparisonResult(diff) 
       visualizer2.setComparisonResult(diff)
-
-      val tbdDiff = new GreedyTraceComparison((node => node.internalId)).compare(visualizer1.ddg.ddg,
-                        visualizer2.ddg.ddg)
 
       label.text = "Tree size left: " + visualizer1.ddg.ddg.nodes.size +
         ", right: " + visualizer2.ddg.ddg.nodes.size +
         "\nTrace Distance: " +
         (diff.added.length + diff.removed.length) +
-        " (Added: " + diff.removed.length + ", removed: " + diff.added.length + ") \n" +
-        "TBD Distance: " + (tbdDiff.added.length + tbdDiff.removed.length) +
-        " (Added: " + tbdDiff.removed.length + ", removed: " + tbdDiff.added.length + ")"
+        " (Added: " + diff.removed.length + ", removed: " + diff.added.length + ")"
     }
   }
 
@@ -121,9 +137,14 @@ class DiffView[T]() extends MainFrame with ExperimentSink[T] {
       gridwidth = 2
       fill = GridBagPanel.Fill.Both
     }
-    layout(label) = new Constraints() {
+    layout(diffSelector) = new Constraints() {
       gridx = 1
       gridy = 1
+      fill = GridBagPanel.Fill.Horizontal
+    }
+    layout(label) = new Constraints() {
+      gridx = 1
+      gridy = 2
       fill = GridBagPanel.Fill.Horizontal
     }
   }

@@ -173,8 +173,8 @@ class DdgVisualizer extends GridBagPanel with Publisher {
   //HTML Formats a node tag for nice display.
   private def formatTag(node: Node): String = {
     node.tag match{
-      case read @ Tag.Read(value, funcTag) => {
-          "Read " + read.mod + " = " + toHtmlString(value) +
+      case read @ Tag.Read(mod, funcTag) => {
+          "Read " + read.mod + " = " + toHtmlString(read.readValue) +
           "<br>Reader " + formatFunctionTag(node, funcTag)
       }
       case Tag.Write(writes) => {

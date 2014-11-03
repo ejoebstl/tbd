@@ -62,7 +62,7 @@ object Main {
         default = Some(0),
         descr = "The count of minimal mutations per mutation round")
       val output = opt[String]("o", 'o', default = Some("visualizer"),
-        descr = "Sets the output mode: visualizer (default), diff, latex or 2dplot.")
+        descr = "Sets the output mode: visualizer (default), diff, latex or chart2d.")
       val testmode = opt[String]("test", 't', default = Some("random"),
         descr = "Test case generation mode: random (default), manual or exhaustive")
       val skipSheckResults = opt[Boolean]("skipSheckResults", 'r', default = Some(false),
@@ -129,6 +129,9 @@ object Main {
       case "smsplit" => create(new MemoSimpleListSplit())
       case "smmap" => create(new MemoSimpleListMap())
       case "smreverse" => create(new MemoSimpleListReverse())
+      case "snlreduce" => create(new NaiveSimpleLinearReduce())
+      case "sntreduce" => create(new NaiveTreeReduce())
+      case "rtreduce" => create(new RandomTreeReduce())
 
       case "modDependency" => create(new ModDepTest())
     }

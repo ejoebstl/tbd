@@ -28,21 +28,21 @@ import scala.language.implicitConversions
 
 
 abstract class SimpleListTestAlgoritm[TbdOutputType, NativeOutputType]()
-    extends TestAlgorithm[SimpleListInput[Int, Int], TbdOutputType, NativeOutputType] {
-  protected def createInput() = { new SimpleListInput[Int, Int]() }
+    extends TestAlgorithm[SimpleListInput[Int], TbdOutputType, NativeOutputType] {
+  protected def createInput() = { new SimpleListInput[Int]() }
 }
 
 class NaiveSimpleListMap()
-    extends SimpleListTestAlgoritm[Mod[SimpleList[(Int, Int)]], Seq[Int]] {
+    extends SimpleListTestAlgoritm[Mod[SimpleList[Int]], Seq[Int]] {
 
-  def run(implicit c: Context): Mod[SimpleList[(Int, Int)]] = {
+  def run(implicit c: Context): Mod[SimpleList[Int]] = {
     val head = input.getList()
 
-    head.naiveMap(x => (x._1, x._2 * 2))
+    head.naiveMap(x => (x * 2))
   }
 
-  def getResult(output: Mod[SimpleList[(Int, Int)]]) = {
-    output.readList().map(_._2).sortWith(_ < _)
+  def getResult(output: Mod[SimpleList[Int]]) = {
+    output.readList().sortWith(_ < _)
   }
 
   def getExpectedResult(input: Map[Int, Int]) = {
@@ -53,24 +53,24 @@ class NaiveSimpleListMap()
 class MemoSimpleListMap()
     extends NaiveSimpleListMap {
 
-  override def run(implicit c: Context): Mod[SimpleList[(Int, Int)]] = {
+  override def run(implicit c: Context): Mod[SimpleList[Int]] = {
     val head = input.getList()
 
-    head.memoMap(x => (x._1, x._2 * 2))
+    head.memoMap(x => (x * 2))
   }
 }
 
 class NaiveSimpleListReverse()
-    extends SimpleListTestAlgoritm[Mod[SimpleList[(Int, Int)]], Seq[Int]] {
+    extends SimpleListTestAlgoritm[Mod[SimpleList[Int]], Seq[Int]] {
 
-  def run(implicit c: Context): Mod[SimpleList[(Int, Int)]] = {
+  def run(implicit c: Context): Mod[SimpleList[Int]] = {
     val head = input.getList()
 
     head.naiveReverse(c)
   }
 
-  def getResult(output: Mod[SimpleList[(Int, Int)]]) = {
-    output.readList().map(_._2)
+  def getResult(output: Mod[SimpleList[Int]]) = {
+    output.readList()
   }
 
   def getExpectedResult(input: Map[Int, Int]) = {
@@ -81,7 +81,7 @@ class NaiveSimpleListReverse()
 class MemoSimpleListReverse()
     extends NaiveSimpleListReverse {
 
-  override def run(implicit c: Context): Mod[SimpleList[(Int, Int)]] = {
+  override def run(implicit c: Context): Mod[SimpleList[Int]] = {
     val head = input.getList()
 
     head.memoReverse(c)
@@ -89,16 +89,16 @@ class MemoSimpleListReverse()
 }
 
 class NaiveSimpleListFilter()
-    extends SimpleListTestAlgoritm[Mod[SimpleList[(Int, Int)]], Seq[Int]] {
+    extends SimpleListTestAlgoritm[Mod[SimpleList[Int]], Seq[Int]] {
 
-  def run(implicit c: Context): Mod[SimpleList[(Int, Int)]] = {
+  def run(implicit c: Context): Mod[SimpleList[Int]] = {
     val head = input.getList()
 
-    head.naiveFilter(x => (x._2 % 2 == 0))
+    head.naiveFilter(x => (x % 2 == 0))
   }
 
-  def getResult(output: Mod[SimpleList[(Int, Int)]]) = {
-    output.readList().map(_._2).sortWith(_ < _)
+  def getResult(output: Mod[SimpleList[Int]]) = {
+    output.readList().sortWith(_ < _)
   }
 
   def getExpectedResult(input: Map[Int, Int]) = {
@@ -109,25 +109,25 @@ class NaiveSimpleListFilter()
 class MemoSimpleListFilter()
     extends NaiveSimpleListFilter {
 
-  override def run(implicit c: Context): Mod[SimpleList[(Int, Int)]] = {
+  override def run(implicit c: Context): Mod[SimpleList[Int]] = {
     val head = input.getList()
 
-    head.memoFilter(x => (x._2 % 2 == 0))
+    head.memoFilter(x => (x % 2 == 0))
   }
 }
 
 class NaiveSimpleListSplit()
-    extends SimpleListTestAlgoritm[(Mod[SimpleList[(Int, Int)]], Mod[SimpleList[(Int, Int)]]), (Seq[Int], Seq[Int])] {
+    extends SimpleListTestAlgoritm[(Mod[SimpleList[Int]], Mod[SimpleList[Int]]), (Seq[Int], Seq[Int])] {
 
-  def run(implicit c: Context): (Mod[SimpleList[(Int, Int)]], Mod[SimpleList[(Int, Int)]]) = {
+  def run(implicit c: Context): (Mod[SimpleList[Int]], Mod[SimpleList[Int]]) = {
     val head = input.getList()
 
-    head.naiveSplit(x => (x._2 % 2 == 0))
+    head.naiveSplit(x => (x % 2 == 0))
   }
 
-  def getResult(output: (Mod[SimpleList[(Int, Int)]], Mod[SimpleList[(Int, Int)]])) = {
-    (output._1.readList().map(_._2).sortWith(_ < _),
-     output._2.readList().map(_._2).sortWith(_ < _))
+  def getResult(output: (Mod[SimpleList[Int]], Mod[SimpleList[Int]])) = {
+    (output._1.readList().sortWith(_ < _),
+     output._2.readList().sortWith(_ < _))
   }
 
   def getExpectedResult(input: Map[Int, Int]) = {
@@ -136,12 +136,51 @@ class NaiveSimpleListSplit()
   }
 }
 
+class NaiveSimpleLinearReduce()
+    extends SimpleListTestAlgoritm[Mod[Int], Int] {
+  override def run(implicit c: Context): Mod[Int] = {
+    val head = input.getList()
+    val init = mod {
+      write(0)
+    }
+    head.naiveLinearReduce((a, b) => (a + b), init)
+  }
+
+  def getResult(output: Mod[Int]) = {
+    output.read()
+  }
+
+  def getExpectedResult(input: Map[Int, Int]) = {
+    input.values.foldLeft(0)(_ + _)
+  }
+}
+
+class NaiveTreeReduce()
+    extends NaiveSimpleLinearReduce {
+
+  override def run(implicit c: Context): Mod[Int] = {
+    val head = input.getList()
+
+    head.naiveTreeReduce((a, b) => (a + b))
+  }
+}
+
+class RandomTreeReduce()
+    extends NaiveSimpleLinearReduce {
+
+  override def run(implicit c: Context): Mod[Int] = {
+    val head = input.getList()
+
+    head.randomTreeReduce((a, b) => (a + b))
+  }
+}
+
 class MemoSimpleListSplit()
     extends NaiveSimpleListSplit {
 
-  override def run(implicit c: Context): (Mod[SimpleList[(Int, Int)]], Mod[SimpleList[(Int, Int)]]) = {
+  override def run(implicit c: Context): (Mod[SimpleList[Int]], Mod[SimpleList[Int]]) = {
     val head = input.getList()
 
-    head.memoSplit(x => (x._2 % 2 == 0))
+    head.memoSplit(x => (x % 2 == 0))
   }
 }

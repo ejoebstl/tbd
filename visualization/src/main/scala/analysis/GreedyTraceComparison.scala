@@ -17,6 +17,7 @@
 package tbd.visualization.analysis
 
 import tbd.visualization.graph._
+import tbd.ddg.{Tag, FunctionTag}
 import scala.collection.mutable.{Buffer, HashSet}
 
 /*
@@ -29,9 +30,9 @@ class GreedyTraceComparison(extractor: (Node => Any))
       ComparisonResult = {
 
     //Inserts nodes into two sets A, B and computes
-    //unchanged = A ? B
-    //removed = A \ B
-    //added = B \ A
+    //unchanged = A intersect B
+    //removed = A without B
+    //added = B without A
     var set = after.nodes.map(x => new NodeWrapper(x, extractor))
 
     var removed = List[Node]()
@@ -49,5 +50,54 @@ class GreedyTraceComparison(extractor: (Node => Any))
     set.foreach(x => removed = x.node :: removed)
 
     new ComparisonResult(removed, added, unchanged)
+  }
+}
+
+object DistanceExtractors {
+  def pure(node: Node) = {
+    node.internalId
+  }
+
+  //Orders variables to ease comparison.
+  private def cleanupFunctionTag(func: FunctionTag): FunctionTag = {
+    FunctionTag(func.funcId, func.freeVars.sortWith((x, y) => x._1 > y._1))
+  }
+
+  //Orders variables and removes mods.
+  private def purgeFunctionTag(func: FunctionTag): FunctionTag = {
+    val cleanedFunc = cleanupFunctionTag(func)
+    FunctionTag(cleanedFunc.funcId, cleanedFunc.freeVars.filter(x => isMod(x._2)))
+  }
+
+  def memoSensitive(node: Node) = {
+    node.tag match {
+      case Tag.Write(writes) => List("write", writes)
+      case x:Tag.Read => List("read", x.mod, cleanupFunctionTag(x.reader), x.readValue)
+      case Tag.Memo(function, args) => List("memo", cleanupFunctionTag(function), args)
+      case Tag.Mod(dests, initializer) => List("mod", dests, cleanupFunctionTag(initializer))
+      case Tag.Par(fun1, fun2) => List("par", cleanupFunctionTag(fun1), cleanupFunctionTag(fun2))
+      case Tag.Root() => List("root")
+    }
+  }
+
+  private def isMod(x: Any) = {
+    x match {
+      case x:tbd.Constants.ModId => false
+      case x:tbd.Mod[Any] => false
+      case _ => true
+    }
+  }
+
+  def allocationSensitive(node: Node) = {
+    node.tag match {
+      case x @ Tag.Write(writes) => List("write", writes.map(x => x.value))
+      case x:Tag.Read => List("read", purgeFunctionTag(x.reader), x.readValue)
+      case Tag.Memo(function, args) => {
+        List("memo", purgeFunctionTag(function), args.filter(isMod(_)))
+      }
+      case Tag.Mod(dests, initializer) => List("mod", purgeFunctionTag(initializer))
+      case Tag.Par(fun1, fun2) => List("par", purgeFunctionTag(fun1), purgeFunctionTag(fun2))
+      case Tag.Root() => List("root")
+    }
   }
 }

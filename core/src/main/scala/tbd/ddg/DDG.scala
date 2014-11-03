@@ -43,7 +43,7 @@ class DDG(log: LoggingAdapter, id: String, worker: Worker) {
 
     val readNode = if(tbd.master.Main.debug) {
       new ReadNode(mod, parent, timestamp,
-                   reader, Tag.Read(value, funcTag)(mod.id))
+                   reader, Tag.Read(mod.id, funcTag)(value))
     } else {
       new ReadNode(mod, parent, timestamp,
                    reader, null)

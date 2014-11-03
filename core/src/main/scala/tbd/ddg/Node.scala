@@ -37,7 +37,7 @@ object Node {
 abstract class Node(
     var parent: Node,
     val timestamp: Timestamp,
-    val tag: Tag) {
+    var tag: Tag) {
   var endTime: Timestamp = null
   var stacktrace =
     if (Main.debug)

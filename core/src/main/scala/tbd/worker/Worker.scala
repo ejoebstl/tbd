@@ -71,6 +71,12 @@ class Worker(val id: String, val datastoreRef: ActorRef, parent: ActorRef)
             readNode.updated = false
             readNode.reader(newValue)
 
+            //Update read-tag to reflect new value. 
+            if(tbd.master.Main.debug) {
+              val readTag = readNode.tag.asInstanceOf[tbd.ddg.Tag.Read]
+
+              readNode.tag = tbd.ddg.Tag.Read(readNode.mod.id, readTag.reader)(newValue)
+            }
 	    c.currentParent = oldCurrentParent
 	    c.reexecutionStart = oldStart
 	    c.reexecutionEnd = oldEnd

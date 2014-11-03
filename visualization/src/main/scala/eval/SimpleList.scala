@@ -28,8 +28,20 @@ object SimpleListMod {
 }
 
 class SimpleList[ListElement](val value: ListElement,
+                              val key: Int,
                               val next: Mod[SimpleList[ListElement]]) {
   override def toString = value.toString
+
+  override def equals(obj: Any): Boolean = {
+    if (!obj.isInstanceOf[SimpleList[ListElement]]) {
+      false
+    } else {
+      val that = obj.asInstanceOf[SimpleList[ListElement]]
+      that.value == value && that.key == key
+    }
+  }
+
+  override def hashCode() = value.hashCode()
 }
 
 class SimpleListMod[Element](val elem: Mod[SimpleList[Element]]) {
@@ -43,7 +55,7 @@ class SimpleListMod[Element](val elem: Mod[SimpleList[Element]]) {
         case elem => write({
           val newValue = mapper(elem.value)
           val newNext = elem.next.naiveMap(mapper)
-          new SimpleList(newValue, newNext)
+          new SimpleList(newValue, elem.key, newNext)
         })
       }
     }
@@ -75,7 +87,7 @@ class SimpleListMod[Element](val elem: Mod[SimpleList[Element]]) {
       }
       case elem => {
         val newAkku = mod {
-          write(new SimpleList(elem.value, akku))
+          write(new SimpleList(elem.value, elem.key, akku))
         }
         elem.next.naiveReverseInternal(newAkku)
       }
@@ -102,13 +114,148 @@ class SimpleListMod[Element](val elem: Mod[SimpleList[Element]]) {
       }
       case elem => {
         val newAkku = mod({
-          write(new SimpleList(elem.value, akku))
+          write(new SimpleList(elem.value, elem.key, akku))
         }, elem.next)
         memo(newAkku, elem.next) {
           elem.next.memoReverseInternal(newAkku, memo)
         }
       }
     }
+  }
+
+  def naiveLinearReduce[OutputElement]
+    (reducer: (Element, OutputElement) => OutputElement, initialValue: Mod[OutputElement])
+    (implicit c: Context): Mod[OutputElement] = {
+      mod {
+        naiveLinearReduceInternal(reducer, initialValue)
+      }
+  }
+
+  def naiveLinearReduceInternal[OutputElement]
+    (reducer: (Element, OutputElement) => OutputElement, initialValue: Mod[OutputElement])
+    (implicit c: Context): Changeable[OutputElement] = {
+    read(elem) {
+      case null => {
+        read(initialValue) {
+          write(_)
+        }
+      }
+      case elem => {
+        val akku = mod {
+          read(initialValue) {
+            case v => write(reducer(elem.value, v))
+          }
+        }
+
+        elem.next.naiveLinearReduceInternal(reducer, akku)
+      }
+    }
+  }
+
+  def naiveTreeReduce
+    (reducer: (Element, Element) => Element)
+    (implicit c: Context): Mod[Element] = {
+      mod {
+        naiveTreeReduceInternal(reducer)
+      }
+  }
+  def naiveTreeReduceInternal
+    (reducer: (Element, Element) => Element)
+    (implicit c: Context): Changeable[Element] = {
+      read(elem) {
+        case null => {
+          throw new Exception("Tried to Tree-Reduce an empty list.")
+        }
+        case e => {
+          read(e.next) {
+            case null => write(e.value)
+            case next => {
+              val newList = mod {
+                elem.reducePairs(reducer)
+              }
+              newList.naiveTreeReduceInternal(reducer)
+            }
+          }
+        }
+      }
+  }
+
+  def reducePairs
+    (reducer: (Element, Element) => Element)
+    (implicit c: Context): Changeable[SimpleList[Element]] = {
+      read(elem) {
+        case null => write(null)
+        case elem => {
+          read(elem.next) {
+            case null => write(elem)
+            case next => {
+              val newNext = mod {
+                next.next.reducePairs(reducer)
+              }
+              write(new SimpleList[Element](reducer(elem.value, next.value), elem.key, newNext))
+            }
+          }
+        }
+      }
+  }
+
+  def randomTreeReduce
+    (reducer: (Element, Element) => Element)
+    (implicit c: Context): Mod[Element] = {
+      mod {
+        randomTreeReduceInternal(reducer, 0)
+      }
+  }
+
+  def randomTreeReduceInternal
+    (reducer: (Element, Element) => Element, round: Integer)
+    (implicit c: Context): Changeable[Element] = {
+      read(elem) {
+        case null => {
+          throw new Exception("Tried to Tree-Reduce an empty list.")
+        }
+        case e => {
+          read(e.next) {
+            case null => write(e.value)
+            case next => {
+              val newList = mod {
+                elem.randomReducePairs(reducer, round)
+              }
+              newList.randomTreeReduceInternal(reducer, round + 1)
+            }
+          }
+        }
+      }
+  }
+
+  def randomReducePairs
+    (reducer: (Element, Element) => Element, round: Int)
+    (implicit c: Context): Changeable[SimpleList[Element]] = {
+      read(elem) {
+        case null => write(null)
+        case elem => {
+          if(bhash(elem.key, round)) {
+            val newNext = mod {
+              elem.next.randomReducePairs(reducer, round)
+            }
+            write(new SimpleList(elem.value, elem.key, newNext))
+          } else {
+            read(elem.next) {
+              case null => write(elem)
+              case next => {
+                val newNext = mod {
+                  next.next.randomReducePairs(reducer, round)
+                }
+                write(new SimpleList(reducer(elem.value, next.value), elem.key, newNext))
+              }
+            }
+          }
+        }
+      }
+  }
+
+  private def bhash(value: Int, round: Int): Boolean = {
+    ((value * 16) + (round * 17)) % 5 == 0
   }
 
   def memoSplit
@@ -144,7 +291,7 @@ class SimpleListMod[Element](val elem: Mod[SimpleList[Element]]) {
           val newNext = mod {
             elem.next.naiveFilterInternal(predicate)
           }
-          write(new SimpleList(elem.value, newNext))
+          write(new SimpleList(elem.value, elem.key, newNext))
         } else {
           elem.next.naiveFilterInternal(predicate)
         }
@@ -180,7 +327,7 @@ class SimpleListMod[Element](val elem: Mod[SimpleList[Element]]) {
               elem.next.memoFilterInternal(predicate, memo)
             }
           }
-          write(new SimpleList(elem.value, newNext))
+          write(new SimpleList(elem.value, elem.key, newNext))
         } else {
           elem.next.memoFilterInternal(predicate, memo)
         }
@@ -203,8 +350,8 @@ class SimpleListMod[Element](val elem: Mod[SimpleList[Element]]) {
           case null => write(null)
           case elem => write({
             val newValue = mapper(elem.value)
-            val newNext = elem.next.naiveMap(mapper)
-            new SimpleList(newValue, newNext)
+            val newNext = elem.next.memoMap(mapper, memo)
+            new SimpleList(newValue, elem.key, newNext)
           })
         }
       }

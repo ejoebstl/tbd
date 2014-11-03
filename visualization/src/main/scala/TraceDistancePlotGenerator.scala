@@ -39,7 +39,7 @@ abstract class TraceDistancePlotGenerator[T](
 
   //Generates and prints the plot.
   override def finish() = {
-    println(getPlot().formatAsText())
+    println(getPlot().formatAsList())
   }
 }
 
@@ -53,14 +53,15 @@ case class PlotInfo(val data: Array[Array[Float]],
                     val yaxisDescription: String = "",
                     val plotTitle: String = "") {
 
-  //Formats this plot as table with a given seperator. 
+  //Formats this plot as table with a given seperator.
   def formatAsText(seperator: String = "\t"): String = {
     val sb = new StringBuilder()
 
     sb.append(plotTitle).append("\n")
-    sb.append(yaxisDescription).append("\\").append(xaxisDescription).append("\t\n\t")
+    sb.append(yaxisDescription).append("\\")
+    sb.append(xaxisDescription).append(seperator + "\n" + seperator)
 
-    xaxis.foreach(x => sb.append(x).append("\t"))
+    xaxis.foreach(x => sb.append(x).append(seperator))
 
     sb.append("\n")
 
@@ -77,5 +78,36 @@ case class PlotInfo(val data: Array[Array[Float]],
     }
 
     sb.toString()
+  }
+
+  def formatAsList(seperator: String = "\t"): String = {
+    val sb = new StringBuilder()
+    val s = seperator
+
+    sb.append(plotTitle).append("\n")
+    sb.append(yaxisDescription).append(s).append(xaxisDescription)
+    sb.append(s).append("data")
+
+    sb.append("\n")
+
+    val yIterator = yaxis.iterator
+    val dataIterator = data.iterator
+
+    while(yIterator.hasNext && dataIterator.hasNext) {
+      val y = yIterator.next
+      val data = dataIterator.next.iterator
+      val xIterator = xaxis.iterator
+
+      while(data.hasNext && xIterator.hasNext) {
+        val d = data.next
+        val x = xIterator.next
+
+        sb.append(x + s + y + s + d + "\n")
+      }
+
+    }
+
+    sb.toString()
+
   }
 }
