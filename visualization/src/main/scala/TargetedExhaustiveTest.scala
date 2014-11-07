@@ -37,7 +37,9 @@ class TargetedExhaustiveTest[I <: Input[Int, Int], T, V](algorithm: TestAlgorith
   var repetitions = 5
   private var ec = 0
 
-  def step() = {
+  private var c = 0
+
+  def step(): Boolean = {
     if(ec == repetitions) {
       pos += 1
       if(pos + len > initialSize + 1)
@@ -48,6 +50,12 @@ class TargetedExhaustiveTest[I <: Input[Int, Int], T, V](algorithm: TestAlgorith
       ec = 1
     } else {
       ec += 1
+    }
+
+    c += 1
+
+    if(c % 100 == 0) {
+      System.err.println("Mutation: " + c)
     }
 
     if(len <= initialSize) {

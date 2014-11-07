@@ -47,7 +47,7 @@ object TBDBuild extends Build {
       mkrun := {
         val classpath = (fullClasspath in Runtime).value.files.absString
         val template = """#!/bin/sh
-        java -Xmx2g -Xss4m -classpath "%s" %s $@
+        java -Xmx20g -Xss4m -classpath "%s" %s $@
         """
 
         val master = template.format(classpath, "tbd.master.Main")
@@ -70,7 +70,7 @@ object TBDBuild extends Build {
       mkvisualization := {
         val classpath = (fullClasspath in Runtime).value.files.absString
         val template = """#!/bin/sh
-        java -Xmx8g -Xss256m -classpath "%s" %s $@
+        java -Xmx20g -Xss256m -classpath "%s" %s $@
         """
 
         val visualization = template.format(classpath, "tbd.visualization.Main")
@@ -101,7 +101,7 @@ object TBDBuild extends Build {
       mkexamples := {
         val classpath = (fullClasspath in Runtime).value.files.absString
         val template = """#!/bin/sh
-        java -Xmx8g -Xss256m -classpath "%s" %s $@
+        java -Xmx20g -Xss256m -classpath "%s" %s $@
         """
 
         val experiment = template.format(classpath, "tbd.examples.list.Experiment")

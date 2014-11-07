@@ -33,15 +33,15 @@ class UpdateLengthPositionPlot[T](distanceAlgorithm: TraceComparison)
   var maxLen = 0
   var maxPos = 0
 
-  //Aggregates the update data and generates the plot.
-  def getPlot(): PlotInfo = {
+  //Maps (length, start position) to (distance)
+  val sparseData = Map[(Int, Int), Int]()
+  var lastExperiment: ExperimentResult[T] = null
 
-    //Maps (length, start position) to (distance)
-    val sparseData = Map[(Int, Int), Int]()
+  override def resultReceived(result: ExperimentResult[T],
+                     sender: ExperimentSource[T]) {
 
-    var lastExperiment = experiments.head
-
-    for(experiment <- experiments.tail) {
+    val experiment = result
+    if(lastExperiment != null) {
 
       //Calculate update start position and update length for this experiment.
       var startPos = Integer.MAX_VALUE
@@ -58,15 +58,20 @@ class UpdateLengthPositionPlot[T](distanceAlgorithm: TraceComparison)
       //For each experiment, compute the trace distance to the last experiment.
       val comparison = distanceAlgorithm.compare(lastExperiment.ddg, experiment.ddg)
 
+
       sparseData((length, startPos)) = comparison.distance
 
       //Remember the maximum occouring length and position, so we know how long
       //our axis are.
       maxLen = max(maxLen, length)
       maxPos = max(maxPos, startPos)
-
-      lastExperiment = experiment
     }
+
+    lastExperiment = experiment
+  }
+
+  //Aggregates the update data and generates the plot.
+  def getPlot(): PlotInfo = {
 
     //Create data structures holding the data.
     var data = new Array[Array[Float]](maxLen)
@@ -95,7 +100,7 @@ class UpdateLengthPositionPlot[T](distanceAlgorithm: TraceComparison)
         if(count(i)(j) != 0)
           data(i)(j) = data(i)(j) / count(i)(j)
 
-    PlotInfo(data, xaxis, yaxis, "Starting Position",
-             "Update Length", "Update Trace Distance");
+    PlotInfo(data, xaxis, yaxis, "Start",
+             "Length", "Distance");
   }
 }

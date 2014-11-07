@@ -170,7 +170,7 @@ abstract class TestBase[I <: Input[Int, Int], T, V](algorithm: TestAlgorithm[I, 
                                       "Got: " + result)
         }
       } else {
-        println("//Output: " + result)
+        //println("//Output: " + result)
       }
 
       mutations = MutableList[Mutation]()

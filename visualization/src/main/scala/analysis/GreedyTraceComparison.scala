@@ -23,11 +23,15 @@ import scala.collection.mutable.{Buffer, HashSet}
 /*
  * Greedy (intrinsic) trace distance computation.
  */
-class GreedyTraceComparison(extractor: (Node => Any))
+class GreedyTraceComparison(extractor: (Node => Any), val ignoreMods: Boolean = false)
   extends TraceComparison(extractor) {
 
   def compare(before: DDG, after: DDG):
       ComparisonResult = {
+
+    if(ignoreMods) {
+      tbd.ModSettings.IgnoreModsInComparison.set(true)
+    }
 
     //Inserts nodes into two sets A, B and computes
     //unchanged = A intersect B
@@ -48,6 +52,10 @@ class GreedyTraceComparison(extractor: (Node => Any))
     })
 
     set.foreach(x => removed = x.node :: removed)
+
+    if(ignoreMods) {
+      tbd.ModSettings.IgnoreModsInComparison.set(false)
+    }
 
     new ComparisonResult(removed, added, unchanged)
   }
@@ -89,6 +97,12 @@ object DistanceExtractors {
   }
 
   def allocationSensitive(node: Node) = {
+
+    if(tbd.ModSettings.IgnoreModsInComparison.get() == false) {
+      throw new Exception("When using allocation sensitive trace distance, " +
+      "set ModSettings.IgnoreModsInComparison to true.")
+    }
+
     node.tag match {
       case x @ Tag.Write(writes) => List("write", writes.map(x => x.value))
       case x:Tag.Read => List("read", purgeFunctionTag(x.reader), x.readValue)

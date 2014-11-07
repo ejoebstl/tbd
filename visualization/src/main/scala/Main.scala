@@ -38,6 +38,10 @@ object Main {
     //Set debug flag to true so we can have nice tags.
     tbd.master.Main.debug = true
 
+    //Set timeouts very high.
+    tbd.Constants.DURATION = 1000000.seconds
+    tbd.Constants.TIMEOUT = Timeout(1000000.seconds)
+
     val system = ActorSystem("masterSystem0",
                            ConfigFactory.load.getConfig("master"))
 
@@ -61,12 +65,15 @@ object Main {
       val minMutations = opt[Int]("minimalMutationsPerPropagation", 'k',
         default = Some(0),
         descr = "The count of minimal mutations per mutation round")
-      val output = opt[String]("o", 'o', default = Some("visualizer"),
+      val output = opt[String]("output", 'o', default = Some("visualizer"),
         descr = "Sets the output mode: visualizer (default), diff, latex or chart2d.")
       val testmode = opt[String]("test", 't', default = Some("random"),
         descr = "Test case generation mode: random (default), manual or exhaustive")
       val skipSheckResults = opt[Boolean]("skipSheckResults", 'r', default = Some(false),
         descr = "Skips result checking.")
+      val traceDistance = opt[String]("traceDistance", 'd', default = Some("pure"),
+        descr = "Trace distance to use for plot generation: " +
+                                      "pure (default), memo or alloc")
     }
 
     //Creates the ExperimentSource for the selected test.
@@ -102,7 +109,11 @@ object Main {
           visible = true
         }
         case "chart2d" => new UpdateLengthPositionPlot[V](
-          new analysis.GreedyTraceComparison((node => node.tag))
+            Conf.traceDistance.get.get match {
+              case "alloc" => new analysis.GreedyTraceComparison(DistanceExtractors.allocationSensitive _, true)
+              case "memo" => new analysis.GreedyTraceComparison(DistanceExtractors.memoSensitive _)
+              case "pure" => new analysis.GreedyTraceComparison(DistanceExtractors.pure _)
+            }
         )
         case "latex" => new LatexExport[V]()
       }
@@ -111,7 +122,7 @@ object Main {
     def create[I <: Input[Int, Int], T, V](algo: TestAlgorithm[I, T, V]) = {
       val test = createTestEnvironment(algo)
       val output = createOutput[V]()
-      new Main(test, List(output))
+      new Main(test, List(output), Conf.output.get.get == "chart2d")
     }
 
     //Creates the test algorithm.
@@ -130,8 +141,11 @@ object Main {
       case "smmap" => create(new MemoSimpleListMap())
       case "smreverse" => create(new MemoSimpleListReverse())
       case "snlreduce" => create(new NaiveSimpleLinearReduce())
+      case "mlreduce" => create(new MemoLinearReduce())
       case "sntreduce" => create(new NaiveTreeReduce())
+      case "mtreduce" => create(new MemoTreeReduce())
       case "rtreduce" => create(new RandomTreeReduce())
+      case "nqsort" => create(new NaiveQuickSort())
 
       case "modDependency" => create(new ModDepTest())
     }
@@ -145,7 +159,7 @@ object Main {
  * to the given ExperimentSink.
  */
 class Main[I <: Input[Int, Int], T, V](val test: TestBase[I, T, V],
-                 val outputs: List[ExperimentSink[V]])
+                 val outputs: List[ExperimentSink[V]], val exitWhenFinished: Boolean)
     extends ExperimentSink[V] {
   test.setExperimentListener(this)
 
@@ -165,5 +179,10 @@ class Main[I <: Input[Int, Int], T, V](val test: TestBase[I, T, V],
   def run() {
     test.run()
     outputs.foreach(x => x.finish())
+
+    if(exitWhenFinished)
+    {
+      System.exit(0)
+    }
   }
 }

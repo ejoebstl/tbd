@@ -57,7 +57,7 @@ case class PlotInfo(val data: Array[Array[Float]],
   def formatAsText(seperator: String = "\t"): String = {
     val sb = new StringBuilder()
 
-    sb.append(plotTitle).append("\n")
+    //sb.append(plotTitle).append("\n")
     sb.append(yaxisDescription).append("\\")
     sb.append(xaxisDescription).append(seperator + "\n" + seperator)
 
@@ -84,7 +84,7 @@ case class PlotInfo(val data: Array[Array[Float]],
     val sb = new StringBuilder()
     val s = seperator
 
-    sb.append(plotTitle).append("\n")
+    //sb.append(plotTitle).append("\n")
     sb.append(yaxisDescription).append(s).append(xaxisDescription)
     sb.append(s).append("data")
 
@@ -104,7 +104,7 @@ case class PlotInfo(val data: Array[Array[Float]],
 
         sb.append(x + s + y + s + d + "\n")
       }
-
+      sb.append("\n")
     }
 
     sb.toString()

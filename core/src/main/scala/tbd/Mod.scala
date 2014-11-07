@@ -40,15 +40,32 @@ class Mod[T](val id: ModId) extends Serializable {
     if (!obj.isInstanceOf[Mod[T]]) {
       false
     } else {
-      val that = obj.asInstanceOf[Mod[T]]
-      that.id == id
+      if(Main.debug && ModSettings.IgnoreModsInComparison.get) {
+        true
+      } else {
+        val that = obj.asInstanceOf[Mod[T]]
+        that.id == id
+      }
     }
   }
-  
+
   //Notice: Removed reading of mod from toString, because calling
   //read() when the mod is no longer valid (for instance in Visualizer)
   //causes a crash.
   override def toString = id
 
-  override def hashCode() = id.hashCode()
+  override def hashCode() =
+    if(Main.debug && ModSettings.IgnoreModsInComparison.get) {
+      0
+    } else {
+      id.hashCode()
+    }
+}
+
+//Static class with a thread local flag to make the equals function of Mod return
+//true for all mods. We need this for allocation sensitive trace distance.
+object ModSettings {
+  val IgnoreModsInComparison = new ThreadLocal[Boolean]() {
+    protected override def initialValue() = false
+  }
 }

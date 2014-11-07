@@ -105,9 +105,9 @@ class DiffView[T]() extends MainFrame with ExperimentSink[T] {
   private def updateDiff() {
     if(visualizer1.ddg != null && visualizer2.ddg != null) {
 
-      val diff = new GreedyTraceComparison(comparison).compare(visualizer1.ddg.ddg,
+      val diff = new GreedyTraceComparison(comparison, comparison == adDistance).compare(visualizer1.ddg.ddg,
                     visualizer2.ddg.ddg)
-      visualizer1.setComparisonResult(diff) 
+      visualizer1.setComparisonResult(diff)
       visualizer2.setComparisonResult(diff)
 
       label.text = "Tree size left: " + visualizer1.ddg.ddg.nodes.size +

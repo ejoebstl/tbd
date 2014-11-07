@@ -46,7 +46,7 @@ class NaiveSimpleListMap()
   }
 
   def getExpectedResult(input: Map[Int, Int]) = {
-    input.values.map(x => x * 2).toSeq.sortWith(_ < _)
+    input.values.map(x => x * 2).toBuffer.sortWith(_ < _)
   }
 }
 
@@ -70,11 +70,11 @@ class NaiveSimpleListReverse()
   }
 
   def getResult(output: Mod[SimpleList[Int]]) = {
-    output.readList()
+    output.readList().toBuffer
   }
 
   def getExpectedResult(input: Map[Int, Int]) = {
-    input.values.toSeq.reverse
+    input.values.toBuffer.reverse
   }
 }
 
@@ -98,11 +98,11 @@ class NaiveSimpleListFilter()
   }
 
   def getResult(output: Mod[SimpleList[Int]]) = {
-    output.readList().sortWith(_ < _)
+    output.readList().toBuffer.sortWith(_ < _)
   }
 
   def getExpectedResult(input: Map[Int, Int]) = {
-    input.values.filter(x => x % 2 == 0).toSeq.sortWith(_ < _)
+    input.values.filter(x => x % 2 == 0).toBuffer.sortWith(_ < _)
   }
 }
 
@@ -165,6 +165,30 @@ class NaiveTreeReduce()
   }
 }
 
+class MemoLinearReduce()
+    extends NaiveSimpleLinearReduce {
+
+  override def run(implicit c: Context): Mod[Int] = {
+    val head = input.getList()
+
+    val init = mod {
+      write(0)
+    }
+
+    head.memoLinearReduce((a, b) => (a + b), init)
+  }
+}
+
+class MemoTreeReduce()
+    extends NaiveSimpleLinearReduce {
+
+  override def run(implicit c: Context): Mod[Int] = {
+    val head = input.getList()
+
+    head.memoTreeReduce((a, b) => (a + b))
+  }
+}
+
 class RandomTreeReduce()
     extends NaiveSimpleLinearReduce {
 
@@ -174,6 +198,25 @@ class RandomTreeReduce()
     head.randomTreeReduce((a, b) => (a + b))
   }
 }
+
+class NaiveQuickSort()
+   extends SimpleListTestAlgoritm[Mod[SimpleList[Int]], Seq[Int]] {
+  override def run(implicit c: Context): Mod[SimpleList[Int]] = {
+    val head = input.getList()
+
+    head.simpleQuickSort(_ < _)
+  }
+
+  def getResult(output: Mod[SimpleList[Int]]) = {
+    output.readList().toBuffer
+  }
+
+  def getExpectedResult(input: Map[Int, Int]) = {
+    input.values.toBuffer.sortWith(_ < _)
+  }
+}
+
+
 
 class MemoSimpleListSplit()
     extends NaiveSimpleListSplit {
